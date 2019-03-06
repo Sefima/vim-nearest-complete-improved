@@ -88,15 +88,4 @@ func! g:NearestComplete(findstart, base)
   endif
 endfun
 
-set completefunc=NearestComplete
-set completeopt=menu
 
-" Pressing g:NearestCompleteTriggerKey opens the autocomplete popup, or moves
-" to the next option if the popup is already open
-inoremap <silent><expr> <C-n>      pumvisible() ? "\<C-n>" : "\<C-x><C-u>"
-"exec 'imap ' . g:NearestCompleteTriggerKey . ' pumvisible() ? ' . "\<C-n>" . ' : ' . "\<C-x><C-u>"
-" Pressing <esc> when the omnicomplete menu is shown doesn't exit insert mode
- imap <expr> <Esc>      pumvisible() ? "\<C-e>" : "\<Esc>"
-" Pressing <CR> when the omnicomplete menu selects the current option and
-" closes the popup
-" imap <expr> <CR>       pumvisible() ? "\<C-y>" : "\<CR>"
