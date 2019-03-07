@@ -45,6 +45,11 @@ endfunction
 inoremap <silent> <tab> <c-o>:call TabComplete()<cr>
 ```
 
+# TODO
+
+- [ ] Ignore comments (user defined)
+- [ ] Ignore language keywords
+
 
 
 
