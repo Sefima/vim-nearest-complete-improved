@@ -1,8 +1,21 @@
 
+" TODO: Ignore comments and keywords?
+let s:open_seps = '(\s|\(|\"|\`|\[|\{|\:|\,|\.|\/|;)'
+let s:close_seps = '(\s|\)|\"|\`|\]|\}|\:|\,|\.|\/|;)'
+
 " Comparison function used for sorting a list of lists.
 " Sorts based on the first value of each sublist
 func! s:FirstListItemCompare(i1, i2)
    return a:i1[0] ==# a:i2[0] ? 0 : a:i1[0] > a:i2[0] ? 1 : -1
+endfunc
+
+func! s:generateRegexp(base)
+  let needle = a:base
+  let open_seps = '(^' . s:open_seps . ')*'
+  let close_seps = '(^' . s:close_seps . ')*'
+  let expander = '(\a|\d|_|\$|\#)*'
+  let full_exp = '\<\c\v' . open_seps . expander . needle . expander . close_seps
+  return full_exp
 endfunc
 
 " Finds all the words starting with a:base and returns them along with the
@@ -10,18 +23,14 @@ endfunc
 "      [[first_word_line_distance, first_word], [second_word_line_distance, second_word], ...]
 " Searches above or below the cursor based on a:go_backwards
 func! s:FindWords(base, go_backwards)
-   set ignorecase
-
   let flags = ''
   if a:go_backwards
     let flags = 'b'
   endif
-
   let orig_cursor = getpos('.')
   let words = []
 
-  " let start = searchpos('\<' . a:base, 'W' . flags)
-  let start = searchpos('\<\c.*' . a:base . '.*', 'W' . flags)
+  let start = searchpos(s:generateRegexp(a:base), 'W' . flags)
   while start !=# [0, 0]
     let end = searchpos('\>', 'W')
     " If we moved to a new line it's an exact match, which we don't want
@@ -38,17 +47,15 @@ func! s:FindWords(base, go_backwards)
       endif
     endif
     call cursor(start)
-    let start = searchpos('\<\c.*' . a:base . '.*', 'W' . flags)
+    let start = searchpos(s:generateRegexp(a:base), 'W' . flags)
   endwhile
 
   call cursor(orig_cursor[1], orig_cursor[2])
 
   return words
-
 endfunc
 
 " The completefunc for nearest-word completion
-" TODO: Ignore comments and keywords?
 func! g:NearestComplete(findstart, base)
   set ignorecase
   set smartcase
@@ -58,7 +65,9 @@ func! g:NearestComplete(findstart, base)
     " locate the start of the word
     let line = getline('.')
     let start = col('.') - 1
-    while start > 0 " && line[start - 1] =~ '\a'
+    let seps = ['{', '.', ' ', '#', '(', '}', ')', ',', ':', ';', '"', "'", '`', '\/', '\!', '[', ']', '$']
+
+    while start > 0 && index(seps, line[start - 1]) == -1
       let start -= 1
     endwhile
     return start
