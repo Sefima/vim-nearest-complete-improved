@@ -9,6 +9,29 @@ func! s:FirstListItemCompare(i1, i2)
    return a:i1[0] ==# a:i2[0] ? 0 : a:i1[0] > a:i2[0] ? 1 : -1
 endfunc
 
+
+function! s:MatchStrAll(str, pat)
+    let l:res = []
+    call substitute(a:str, a:pat, '\=add(l:res, submatch(0))', 'g')
+    return l:res
+endfunction
+
+function! s:GetMatchesFromOtherBuffers(regex)
+    let buff_list = filter(range(1, bufnr('$')), 'bufexists(v:val)')
+    let curr_buff_i = bufnr('%')
+    let words = []
+    let i = 0
+    let content = ""
+    for i in buff_list
+        if (i != curr_buff_i)
+            let buff_content = getbufline(i, 1, '$')
+            let content = content . join(buff_content)
+        endif
+    endfor
+    let results = s:MatchStrAll(content, a:regex)
+    return results
+endfunction
+
 func! s:generateRegexp(base)
   let needle = a:base
   let open_seps = '(^' . s:open_seps . ')*'
@@ -50,10 +73,11 @@ func! s:FindWords(base, go_backwards)
     let start = searchpos(s:generateRegexp(a:base), 'W' . flags)
   endwhile
 
-  call cursor(orig_cursor[1], orig_cursor[2])
 
+  call cursor(orig_cursor[1], orig_cursor[2])
   return words
 endfunc
+
 
 " The completefunc for nearest-word completion
 func! g:NearestComplete(findstart, base)
@@ -65,7 +89,7 @@ func! g:NearestComplete(findstart, base)
     " locate the start of the word
     let line = getline('.')
     let start = col('.') - 1
-    let seps = ['{', '.', ' ', '#', '(', '}', ')', ',', ':', ';', '"', "'", '`', '\/', '\!', '[', ']', '$']
+    let seps = ['{', '.', ' ', '#', '(', '}', ')', ',', ':', ';', '"', "'", '`', '\/', '!', '[', ']', '$']
 
     while start > 0 && index(seps, line[start - 1]) == -1
       let start -= 1
@@ -92,8 +116,9 @@ func! g:NearestComplete(findstart, base)
       endif
     endfor
 
+    let regex = s:generateRegexp(a:base)
+    let res = res + s:GetMatchesFromOtherBuffers(regex)
     return res
-
   endif
 endfun
 
